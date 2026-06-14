@@ -253,43 +253,6 @@ body {
   box-shadow: var(--shadow-lg);
 }
 
-.results-carousel {
-  overflow: hidden;
-  padding: 1rem 0;
-}
-
-.results-carousel .item {
-  margin: 1rem;
-  overflow: hidden;
-  padding: 1.5rem;
-  font-size: 0;
-  background: var(--background-primary);
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-md);
-  transition: var(--transition);
-  border: 1px solid var(--border-color);
-}
-
-.results-carousel .item:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
-}
-
-.results-carousel .item img,
-.results-carousel video {
-  margin: 0;
-  border-radius: var(--border-radius);
-  width: 100%;
-  height: auto;
-}
-
-.results-carousel .subtitle {
-  font-size: 1rem !important;
-  color: var(--text-secondary);
-  margin-top: 1rem;
-  font-weight: 500;
-}
-
 /* Pagination and Misc Improvements */
 .slider-pagination .slider-page {
   background: var(--primary-color);
@@ -641,12 +604,7 @@ code {
     bottom: calc(100% + 0.5rem);
     top: auto;
   }
-  
-  .results-carousel .item {
-    margin: 0.5rem;
-    padding: 1rem;
-  }
-  
+
   .teaser .hero-body {
     padding: 1rem;
   }
@@ -751,3 +709,286 @@ a:focus {
 
 
 
+
+/* ===========================================================================
+   Arbitrary Keypoint Guidance Following
+   A single synchronized horizontal-scroll table:
+   - rows  = keypoint masks (Full / Torso / Wrists / Ankles / Left / Right)
+   - cols  = motion clips (same clip across every row)
+   - the colored mask label is a sticky left column
+   =========================================================================== */
+.akg-section {
+  background: var(--background-primary);
+}
+
+/* Wider container (matches the collaborator's site) so the table sits with a
+   comfortable left/right margin rather than flush to the page edge. */
+.container.is-max-wide {
+  max-width: 1180px !important;   /* beats Bulma's .container:not(...) cap */
+  margin: 0 auto;
+}
+
+.akg-subtitle {
+  max-width: 760px;
+  margin: 0.25rem auto 0;
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+/* Full-bleed horizontal scroller anchored near the page's left edge so the
+   table uses the available width instead of sitting in a narrow column. */
+.akg-scroll {
+  margin-top: 1.75rem;
+  padding: 0.25rem 0 1rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.akg-table {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: max-content;        /* let the table grow past the viewport */
+}
+
+.akg-row {
+  display: flex;
+  align-items: stretch;      /* label stretches to clip height */
+  gap: 16px;
+}
+
+/* Sticky mask label ------------------------------------------------------- */
+.akg-label {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  flex: 0 0 auto;
+  display: flex;
+  background: var(--background-primary);   /* gutter masks clips sliding under */
+  padding-right: 10px;
+}
+
+.akg-label-inner {
+  width: 38px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-sm);
+}
+
+.akg-label-inner span {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);        /* read bottom-to-top, upright */
+  font-weight: 600;
+  font-size: 0.92rem;
+  letter-spacing: 0.02em;
+  color: #4a4a4a;
+  white-space: nowrap;
+}
+
+/* Clip cards -------------------------------------------------------------- */
+.akg-card {
+  flex: 0 0 auto;
+  width: 384px;
+  aspect-ratio: 16 / 10;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #e9eaed;            /* visible gray placeholder before video loads */
+  border: 1px solid #d3d6db;
+  transition: var(--transition);
+}
+
+.akg-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.akg-card video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  background: #e9eaed;
+}
+
+/* Center-crop the static clips to cut dead floor/side margins:
+   keep the horizontal center 50% (sides 1/4→3/4) and drop the bottom 1/3.
+   Skipped on locomotion clips (the figure translates out of frame). */
+.akg-card.akg-crop video {
+  object-view-box: inset(0% 25% 33.33% 25%);
+}
+
+/* Fallback for browsers without object-view-box: approximate with a
+   top-biased zoom (clips overflow is hidden by the card). */
+@supports not (object-view-box: inset(0% 0% 0% 0%)) {
+  .akg-card.akg-crop video {
+    transform: scale(1.7) translateY(-9%);
+    transform-origin: center center;
+  }
+}
+
+/* Per-mask accent colors (matched to the reference pastels) --------------- */
+.akg-row[data-mask="full"]   .akg-label-inner { background: #cf9b92; }  /* terracotta */
+.akg-row[data-mask="torso"]  .akg-label-inner { background: #f1dabb; }  /* peach */
+.akg-row[data-mask="wrists"] .akg-label-inner { background: #f6edc6; }  /* cream */
+.akg-row[data-mask="ankles"] .akg-label-inner { background: #cfe0c8; }  /* green */
+.akg-row[data-mask="left"]   .akg-label-inner { background: #c3d6da; }  /* sage */
+.akg-row[data-mask="right"]  .akg-label-inner { background: #c2d3f0; }  /* blue */
+
+/* Mobile ------------------------------------------------------------------ */
+@media screen and (max-width: 768px) {
+  .akg-card { width: 360px; }
+  .akg-label-inner { width: 32px; }
+  .akg-label-inner span { font-size: 0.82rem; }
+}
+
+
+/* ===========================================================================
+   Speed-commanded Locomotion
+   =========================================================================== */
+.scl-section {
+  background: var(--background-secondary);
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.scl-table {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: max-content;
+}
+
+.scl-row {
+  display: flex;
+  gap: 16px;
+}
+
+.scl-cell {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.scl-caption {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-align: center;
+  margin: 0;
+  letter-spacing: 0.01em;
+}
+
+
+/* ===========================================================================
+   Interactive Viewer
+   =========================================================================== */
+.iv-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 1.5rem;
+  height: min(320px, 33vw);
+}
+
+.iv-screenshot,
+.iv-video {
+  flex: 0 0 auto;
+  height: 100%;               /* fill the row height */
+  width: auto;                /* natural aspect ratio, no distortion */
+  display: block;
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
+}
+
+/* iv-row always stays horizontal — height scales via 33vw */
+
+
+/* ===========================================================================
+   Obstacle-reach
+   =========================================================================== */
+.or-table {
+  display: flex;
+  flex-direction: row;
+  gap: 32px;
+  width: max-content;
+  margin-top: 1.75rem;
+  padding: 0.25rem 0 1rem;
+}
+
+.or-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.or-header {
+  border-radius: 8px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4a4a4a;
+  border: 1px solid rgba(0,0,0,0.07);
+  letter-spacing: 0.02em;
+}
+
+.or-header-1 { background: #e8bfbf; }   /* rose   — matches AKG full/terracotta family */
+.or-header-2 { background: #f5e8b0; }   /* cream  — matches AKG torso/peach family */
+.or-header-4 { background: #bdd0eb; }   /* periwinkle — matches AKG right/blue family */
+
+.or-cards {
+  display: flex;
+  gap: 16px;
+}
+
+.or-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Square crop card */
+.or-card {
+  width: 210px;
+  height: 210px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #e9eaed;
+  border: 1px solid #d3d6db;
+  transition: var(--transition);
+}
+
+.or-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* Default crop: center square from 16:9 */
+.or-card video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  display: block;
+  background: #e9eaed;
+}
+
+/* phase_4 has a raised/angled viewpoint — bias to top-center to keep the figure */
+.or-card.or-phase4 video {
+  object-position: center 20%;
+}
